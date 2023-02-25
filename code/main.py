@@ -107,20 +107,23 @@ class CFG:
     cache_path = "./clip-interrogator-models-x"
 
 # Load the Sample Submission
-df_submission = pd.read_csv(comp_path / 'sample_submission.csv', index_col='imgId_eId')
+# df_submission = pd.read_csv(comp_path / 'sample_submission.csv', index_col='imgId_eId')
 # df_submission.head()
 
 # Build index from images
-images = os.listdir(comp_path / 'images')
+images = os.listdir(comp_path / 'images')  # список всех изображений
+print('имена всех изображений', images)
 imgIds = [i.split('.')[0] for i in images]
+print('имена всех изображений без расширения файла', imgIds)
 eIds = list(range(CFG.embedding_length))
+# print(eIds)  # 0-383
 imgId_eId = [
     '_'.join(map(str, i)) for i in zip(
         np.repeat(imgIds, CFG.embedding_length),
         np.tile(range(CFG.embedding_length), len(imgIds))
     )
 ]
-assert sorted(imgId_eId) == sorted(df_submission.index)
+# assert sorted(imgId_eId) == sorted(df_submission.index)
 
 # Load the embedding model
 st_model = SentenceTransformer(CFG.sentence_model_path)
@@ -163,9 +166,9 @@ ci = clip_interrogator.Interrogator(model_config)
 ########################################## Define interrogate function #################################################
 
 # Get labels embeddings
-'''Original CLIP Interrogator uses image_features and text_embeds matrix multiplication to fine the similarity 
-between the corresponding image and text label. But I found that using cosine similarity is much faster and the 
-resulting score is almost identical. So take that into account.'''
+'''Оригинальный CLIP Interrogator использует умножение матриц image_features и text_embeds для уточнения подобия
+между соответствующим изображением и текстовой меткой. Но я обнаружил, что использование сходства косинусов намного быстрее, и
+результирующий балл почти идентичен. Так что примите это во внимание.'''
 
 cos = torch.nn.CosineSimilarity(dim=1)
 
@@ -189,50 +192,13 @@ def interrogate(image: Image) -> str:
 
     return clip_interrogator._truncate_to_fit(prompt, ci.tokenize)
 
-# Extract promt from images
+# извлечение подсказки из изображения
 prompts = []
-
+num = 1
 images_path = "./data/images/"
 for image_name in images:
     img = Image.open(images_path + image_name).convert("RGB")
     generated = interrogate(img)
+    print(num, '. ', generated)
+    num += 1
     prompts.append(generated)
-
-# Check the result
-def add_text_limiters(text: str) -> str:
-    return " ".join([
-        word + "\n" if i % 20 == 0 else word
-        for i, word in enumerate(text.split(" "), start=1)
-    ])
-
-# def plot_image(image: np.ndarray, original_prompt: str, generated_prompt: str) -> None:
-#     plt.figure(figsize=(10, 10))
-#     plt.imshow(image)
-#     plt.annotate(
-#         "Original prompt:\n" + add_text_limiters(original_prompt) + "\n\nGenerated prompt:\n" + add_text_limiters(generated_prompt),
-#         xy=(1.05, 0.5), xycoords='axes fraction', ha='left', va='center',
-#         fontsize=16, rotation=0, color="#00786b"
-#     )
-
-# DO NOT FORGET TO COMMENT OUT THIS CELL DURING SUBMISSION
-# original_prompts_df = pd.read_csv("./data/prompts.csv")
-#
-# for image_name, prompt in zip(images, prompts):
-#     img = Image.open(images_path + image_name).convert("RGB")
-#     original_prompt = original_prompts_df[
-#         original_prompts_df.imgId == image_name.split(".")[0]
-#     ].prompt.iloc[0]
-#     plot_image(img, original_prompt, prompt)
-
-# Create a sample submission with a constant prompt prediction
-# Encode prompts
-prompt_embeddings = st_model.encode(prompts).flatten()
-
-# Create submission DataFrame and save it as a .csv file
-submission = pd.DataFrame(
-    index=imgId_eId,
-    data=prompt_embeddings,
-    columns=['val']
-).rename_axis('imgId_eId')
-
-submission.to_csv('submission.csv')

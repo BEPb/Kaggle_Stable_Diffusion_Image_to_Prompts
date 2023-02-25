@@ -163,9 +163,9 @@ ci = clip_interrogator.Interrogator(model_config)
 ########################################## Define interrogate function #################################################
 
 # Get labels embeddings
-'''Original CLIP Interrogator uses image_features and text_embeds matrix multiplication to fine the similarity 
-between the corresponding image and text label. But I found that using cosine similarity is much faster and the 
-resulting score is almost identical. So take that into account.'''
+'''Оригинальный CLIP Interrogator использует умножение матриц image_features и text_embeds для уточнения подобия
+между соответствующим изображением и текстовой меткой. Но я обнаружил, что использование сходства косинусов намного быстрее, и
+результирующий балл почти идентичен. Так что примите это во внимание.'''
 
 cos = torch.nn.CosineSimilarity(dim=1)
 
