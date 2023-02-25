@@ -61,8 +61,8 @@ from sentence_transformers import SentenceTransformer, models
 и обеспечивают самые современные характеристики в различных задачах. Текст встраивается в векторное пространство 
 таким образом, что похожий текст близок и может быть эффективно найден с помощью косинусного сходства.   '''
 
-
 comp_path = Path('.\\data')
+
 # replace tokenizer path to prevent downloading
 blip_path = inspect.getfile(blip)
 fin = open(blip_path, "rt")
